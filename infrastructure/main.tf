@@ -1,5 +1,5 @@
 provider "azurerm" {
-    version = "1.44.0"
+  version = "1.44.0"
 }
 
 terraform {
@@ -29,15 +29,21 @@ resource "azurerm_resource_group" "rg_notejam" {
   )
 }
 
-# resource "azurerm_app_service_plan" "main" {
-#   name                = "${var.prefix}-asp"
-#   location            = "${azurerm_resource_group.main.location}"
-#   resource_group_name = "${azurerm_resource_group.main.name}"
-#   kind                = "Linux"
-#   reserved            = true
+resource "azurerm_app_service_plan" "plan_notejam" {
+  name                = "plan0${local.name_postfix}"
+  location            = azurerm_resource_group.rg_notejam.location
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  kind                = var.app_service_plan_kind
+  reserved            = var.app_service_plan_reserved
+  per_site_scaling    = var.app_service_plan_per_site_scaling
 
-#   sku {
-#     tier = "Standard"
-#     size = "S1"
-#   }
-# }
+  sku {
+    tier     = var.app_service_plan_sku_tier
+    size     = var.app_service_plan_sku_size
+    capacity = var.app_service_plan_sku_capacity
+  }
+
+  tags = merge(
+    local.common_tags
+  )
+}

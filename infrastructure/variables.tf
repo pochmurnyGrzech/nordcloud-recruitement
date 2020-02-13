@@ -8,3 +8,30 @@ variable "location_shortcut" {
 variable "project_name" {
   description = "Name of the project"
 }
+
+variable "app_service_plan_kind" {
+  description = "Kind of the app service plan. Possibilities: Windows (also available as App), Linux, elastic (for Premium Consumption) and FunctionApp (for a Consumption Plan)."
+}
+
+variable "app_service_plan_reserved" {
+  
+}
+
+
+variable "app_service_plan_sku_tier" {
+  
+}
+
+variable "app_service_plan_sku_size" {
+  
+}
+
+
+variable "app_service_plan_sku_capacity" {
+  
+}
+
+variable "app_service_plan_per_site_scaling" {
+  
+}
+
