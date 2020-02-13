@@ -47,3 +47,24 @@ resource "azurerm_app_service_plan" "plan_notejam" {
     local.common_tags
   )
 }
+
+resource "azurerm_app_service_plan" "plan_notejam" {
+  name                = "plan0${local.name_postfix}"
+  location            = azurerm_resource_group.rg_notejam.location
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  kind                = var.app_service_plan_kind
+  reserved            = var.app_service_plan_reserved
+  per_site_scaling    = var.app_service_plan_per_site_scaling
+
+  sku {
+    tier     = var.app_service_plan_sku_tier
+    size     = var.app_service_plan_sku_size
+    capacity = var.app_service_plan_sku_capacity
+  }
+
+  tags = merge(
+    local.common_tags
+  )
+}
+
+
