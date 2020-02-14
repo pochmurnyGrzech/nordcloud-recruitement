@@ -48,23 +48,23 @@ resource "azurerm_app_service_plan" "plan_notejam" {
   )
 }
 
-resource "azurerm_app_service_plan" "plan_notejam" {
-  name                = "plan0${local.name_postfix}"
+resource "azurerm_app_service" "app_notejam" {
+  name                = "app0${local.name_postfix}"
   location            = azurerm_resource_group.rg_notejam.location
   resource_group_name = azurerm_resource_group.rg_notejam.name
-  kind                = var.app_service_plan_kind
-  reserved            = var.app_service_plan_reserved
-  per_site_scaling    = var.app_service_plan_per_site_scaling
+  app_service_plan_id = azurerm_app_service_plan.plan_notejam.id
 
-  sku {
-    tier     = var.app_service_plan_sku_tier
-    size     = var.app_service_plan_sku_size
-    capacity = var.app_service_plan_sku_capacity
+  site_config {
+    always_on        = var.app_service_always_on
+    http2_enabled    = true
+    linux_fx_version = "NODE|10.18"
+  }
+
+  app_settings = {
+    WEBSITE_NODE_DEFAULT_VERSION = "10.18.0"
   }
 
   tags = merge(
     local.common_tags
   )
 }
-
-

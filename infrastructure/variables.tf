@@ -32,6 +32,9 @@ variable "app_service_plan_sku_capacity" {
 }
 
 variable "app_service_plan_per_site_scaling" {
-  
+
 }
 
+variable "app_service_always_on" {
+  
+}
