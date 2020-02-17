@@ -33,7 +33,11 @@ resource "azurerm_application_insights" "appinsights_notejam" {
   name                = "appinsights0${local.name_postfix}"
   location            = azurerm_resource_group.rg_notejam.location
   resource_group_name = azurerm_resource_group.rg_notejam.name
-  application_type    = "web"
+  application_type    = "Node.JS"
+
+    tags = merge(
+    local.common_tags
+  )
 }
 
 resource "azurerm_app_service_plan" "plan_notejam" {
