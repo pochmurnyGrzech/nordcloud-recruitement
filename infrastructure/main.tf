@@ -29,6 +29,13 @@ resource "azurerm_resource_group" "rg_notejam" {
   )
 }
 
+resource "azurerm_application_insights" "appinsights_notejam" {
+  name                = "appinsights0${local.name_postfix}"
+  location            = azurerm_resource_group.rg_notejam.location
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  application_type    = "web"
+}
+
 resource "azurerm_app_service_plan" "plan_notejam" {
   name                = "plan0${local.name_postfix}"
   location            = azurerm_resource_group.rg_notejam.location
@@ -58,13 +65,32 @@ resource "azurerm_app_service" "app_notejam" {
     always_on        = var.app_service_always_on
     http2_enabled    = true
     linux_fx_version = "NODE|10.18"
+    app_command_line = "process.json"
   }
 
   app_settings = {
     WEBSITE_NODE_DEFAULT_VERSION = "10.18.0"
+    InstrumentationKey = azurerm_application_insights.appinsights_notejam.instrumentation_key
   }
 
   tags = merge(
     local.common_tags
   )
 }
+
+# resource "azurerm_app_service_slot" "app_notejam_staging" {
+#   name                = "app0staging${local.name_postfix}"
+#   app_service_name    = azurerm_app_service.app_notejam.name
+#   location            = azurerm_resource_group.rg_notejam.location
+#   resource_group_name = azurerm_resource_group.rg_notejam.name
+#   app_service_plan_id = azurerm_app_service_plan.plan_notejam.id
+
+#   site_config {
+#     linux_fx_version = "NODE|10.18"
+#   }
+
+#   app_settings = {
+#     WEBSITE_NODE_DEFAULT_VERSION = "10.18.0"
+#     InstrumentationKey = azurerm_application_insights.appinsights_notejam.instrumentation_key
+#   }
+# }

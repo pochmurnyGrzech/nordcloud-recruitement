@@ -13,12 +13,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 trigger:
-  branches:
-    include:
-    - master
-  paths:
-    include:
-    - src/notejam*
+- master
 
 variables:
 
