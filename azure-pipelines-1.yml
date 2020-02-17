@@ -39,12 +39,13 @@ stages:
         npm install
         npm run build --if-present
         npm run test --if-present
+      workingDirectory: './src/notejam/'
       displayName: 'npm install, build and test'
       
     - task: ArchiveFiles@2
       displayName: 'Archive files'
       inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src/notejam/'
         includeRootFolder: false
         archiveType: zip
         archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
