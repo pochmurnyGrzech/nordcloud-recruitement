@@ -1,13 +1,4 @@
 # Node.js Express Web App to Linux on Azure
-- task: AzureRmWebAppDeployment@4
-  inputs:
-    ConnectionType: 'AzureRM'
-    azureSubscription: 'Visual Studio Enterprise (1bc153e6-053d-4ab0-9dc2-8089e134f798)'
-    appType: 'webAppLinux'
-    WebAppName: 'app0notejam0lab0we'
-    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
-    RuntimeStack: 'NODE|10-lts'
-    StartupCommand: 'process.json'
 # Build a Node.js Express app and deploy it to Azure as a Linux web app.
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
@@ -18,13 +9,13 @@ trigger:
 variables:
 
   # Azure Resource Manager connection created during pipeline creation
-  azureSubscription: '5a45b3d2-c0d7-4309-8cbd-a84b3cf61e87'
+  azureSubscription: '4979bc99-2d04-448b-8608-ddb7422a3028'
   
   # Web app name
-  webAppName: ''
+  webAppName: 'app0notejam0lab0we'
   
   # Environment name
-  environmentName: ''
+  environmentName: 'app0notejam0lab0we'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
@@ -48,12 +39,13 @@ stages:
         npm install
         npm run build --if-present
         npm run test --if-present
+      workingDirectory: './src/notejam/'
       displayName: 'npm install, build and test'
       
     - task: ArchiveFiles@2
       displayName: 'Archive files'
       inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src/notejam/'
         includeRootFolder: false
         archiveType: zip
         archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
@@ -77,11 +69,11 @@ stages:
         deploy:
           steps:            
           - task: AzureWebApp@1
-            displayName: 'Azure Web App Deploy: '
+            displayName: 'Azure Web App Deploy: app0notejam0lab0we'
             inputs:
               azureSubscription: $(azureSubscription)
               appType: webAppLinux
               appName: $(webAppName)
               runtimeStack: 'NODE|10.10'
               package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
-              startUpCommand: 'npm run start'
+              startUpCommand: 'process.json'
