@@ -73,8 +73,8 @@ resource "azurerm_app_service" "app_notejam" {
   }
 
   app_settings = {
+    APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.appinsights_notejam.instrumentation_key
     WEBSITE_NODE_DEFAULT_VERSION = "10.18.0"
-    InstrumentationKey = azurerm_application_insights.appinsights_notejam.instrumentation_key
   }
 
   tags = merge(
