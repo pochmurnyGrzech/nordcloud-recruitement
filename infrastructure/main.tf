@@ -134,7 +134,7 @@ resource "azurerm_app_service" "app_notejam" {
     APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.appinsights_notejam.instrumentation_key
     WEBSITE_NODE_DEFAULT_VERSION   = "10.18.0"
     PORT                           = "8080"
-    CONNECTION_STRING              = "postgres://${data.azurerm_key_vault_secret.kvs_notejam_db_login.value}@${azurerm_postgresql_database.psqldb_notejam.name}:${data.azurerm_key_vault_secret.kvs_notejam_db_password.value}@${azurerm_postgresql_server.psql_notejam.fqdn}/${azurerm_postgresql_database.psqldb_notejam.name}?ssl=true"
+    CONNECTION_STRING              = "postgres://${data.azurerm_key_vault_secret.kvs_notejam_db_login.value}@${azurerm_postgresql_server.psqldb_notejam.name}:${data.azurerm_key_vault_secret.kvs_notejam_db_password.value}@${azurerm_postgresql_server.psql_notejam.fqdn}/${azurerm_postgresql_database.psqldb_notejam.name}?ssl=true"
     DB_NAME                        = azurerm_postgresql_database.psqldb_notejam.name
   }
 
@@ -187,56 +187,73 @@ resource "azurerm_postgresql_database" "psqldb_notejam" {
 # }
 
 
-resource "azurerm_network_security_group" "nsg_notejam" {
-  name                = "nsg0${local.name_postfix}"
-  location            = azurerm_resource_group.rg_notejam.location
-  resource_group_name = azurerm_resource_group.rg_notejam.name
-}
+# resource "azurerm_network_security_group" "nsg_notejam" {
+#   name                = "nsg0${local.name_postfix}"
+#   location            = azurerm_resource_group.rg_notejam.location
+#   resource_group_name = azurerm_resource_group.rg_notejam.name
+# }
 
-resource "azurerm_virtual_network" "vnet_notejam" {
-  name                = "vnet0${local.name_postfix}"
-  location            = azurerm_resource_group.rg_notejam.location
-  resource_group_name = azurerm_resource_group.rg_notejam.name
-  address_space       = ["10.0.0.0/24"]
+# resource "azurerm_virtual_network" "vnet_notejam" {
+#   name                = "vnet0${local.name_postfix}"
+#   location            = azurerm_resource_group.rg_notejam.location
+#   resource_group_name = azurerm_resource_group.rg_notejam.name
+#   address_space       = ["10.0.0.0/24"]
 
-  tags = merge(
-    local.common_tags
-  )
-}
+#   tags = merge(
+#     local.common_tags
+#   )
+# }
 
-resource "azurerm_subnet" "snet_app_notejam" {
-  name                 = "snet0app0${local.name_postfix}"
-  resource_group_name  = azurerm_resource_group.rg_notejam.name
-  virtual_network_name = azurerm_virtual_network.vnet_notejam.name
-  address_prefix       = "10.0.0.0/25"
+# resource "azurerm_subnet" "snet_app_notejam" {
+#   name                 = "snet0app0${local.name_postfix}"
+#   resource_group_name  = azurerm_resource_group.rg_notejam.name
+#   virtual_network_name = azurerm_virtual_network.vnet_notejam.name
+#   address_prefix       = "10.0.0.0/25"
 
-  delegation {
-    name = "acctestdelegation"
+#   delegation {
+#     name = "acctestdelegation"
 
-    service_delegation {
-      name    = "Microsoft.Web/serverFarms"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
-    }
-  }
-}
+#     service_delegation {
+#       name    = "Microsoft.Web/serverFarms"
+#       actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+#     }
+#   }
+# }
 
-resource "azurerm_subnet" "snet_db_notejam" {
-  name                 = "snet0db${local.name_postfix}"
-  resource_group_name  = azurerm_resource_group.rg_notejam.name
-  virtual_network_name = azurerm_virtual_network.vnet_notejam.name
-  address_prefix       = "10.0.0.128/25"
+# resource "azurerm_subnet" "snet_db_notejam" {
+#   name                 = "snet0db${local.name_postfix}"
+#   resource_group_name  = azurerm_resource_group.rg_notejam.name
+#   virtual_network_name = azurerm_virtual_network.vnet_notejam.name
+#   address_prefix       = "10.0.0.128/25"
 
-  service_endpoints = ["Microsoft.Sql"]
-}
+#   service_endpoints = ["Microsoft.Sql"]
+# }
 
-resource "azurerm_app_service_virtual_network_swift_connection" "vnet_app_connection_notejam" {
-  app_service_id = azurerm_app_service.app_notejam.id
-  subnet_id      = azurerm_subnet.snet_app_notejam.id
-}
+# resource "azurerm_app_service_virtual_network_swift_connection" "vnet_app_connection_notejam" {
+#   app_service_id = azurerm_app_service.app_notejam.id
+#   subnet_id      = azurerm_subnet.snet_app_notejam.id
+# }
 
-resource "azurerm_postgresql_virtual_network_rule" "vnetrule_db_notejam" {
-  name                = "vnetrule0db0${local.name_postfix}"
+# resource "azurerm_postgresql_virtual_network_rule" "vnetrule_db_notejam" {
+#   name                = "vnetrule0db0${local.name_postfix}"
+#   resource_group_name = azurerm_resource_group.rg_notejam.name
+#   server_name         = azurerm_postgresql_server.psql_notejam.name
+#   subnet_id           = azurerm_subnet.snet_db_notejam.id
+# }
+
+resource "azurerm_postgresql_firewall_rule" "psql_app_firewall_rules_notejam" {
+  count               = length(split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses))
+  name                = "App_Notejam_${count.index}"
   resource_group_name = azurerm_resource_group.rg_notejam.name
   server_name         = azurerm_postgresql_server.psql_notejam.name
-  subnet_id           = azurerm_subnet.snet_db_notejam.id
+  start_ip_address    = split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses)[count.index]
+  end_ip_address      = split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses)[count.index]
+}
+
+resource "azurerm_postgresql_firewall_rule" "psql_az_firewall_rule_notejam" {
+  name                = "Azure"
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  server_name         = azurerm_postgresql_server.psql_notejam.name
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
 }
