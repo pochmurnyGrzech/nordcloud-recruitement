@@ -1,1 +1,4 @@
 node_modules
+notejam.db
+notejam_test.db
+sqlite_dump_data.sql

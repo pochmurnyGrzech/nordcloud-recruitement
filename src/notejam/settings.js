@@ -1,7 +1,7 @@
 var settings = {
   development: {
-    db: "notejam.db",
-    dsn: "sqlite://notejam.db"
+    db: process.env.DB_NAME,
+    dsn: process.env.CONNECTION_STRING,
   },
   test: {
     db: "notejam_test.db",
