@@ -15,7 +15,9 @@ var users = require('./routes/users');
 var pads = require('./routes/pads');
 var notes = require('./routes/notes');
 var settings = require('./settings')
-
+const appInsights = require("applicationinsights");
+appInsights.setup(process.env.APPINSIGHTS_INSTRUMENTATIONKEY);
+appInsights.start();
 var app = express();
 
 

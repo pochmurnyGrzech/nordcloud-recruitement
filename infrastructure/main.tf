@@ -134,7 +134,7 @@ resource "azurerm_app_service" "app_notejam" {
     APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.appinsights_notejam.instrumentation_key
     WEBSITE_NODE_DEFAULT_VERSION   = "10.18.0"
     PORT                           = "8080"
-    CONNECTION_STRING              = "postgres://${data.azurerm_key_vault_secret.kvs_notejam_db_login.value}@${azurerm_postgresql_server.psqldb_notejam.name}:${data.azurerm_key_vault_secret.kvs_notejam_db_password.value}@${azurerm_postgresql_server.psql_notejam.fqdn}/${azurerm_postgresql_database.psqldb_notejam.name}?ssl=true"
+    CONNECTION_STRING              = "postgres://${data.azurerm_key_vault_secret.kvs_notejam_db_login.value}@${azurerm_postgresql_server.psql_notejam.name}:${data.azurerm_key_vault_secret.kvs_notejam_db_password.value}@${azurerm_postgresql_server.psql_notejam.fqdn}/${azurerm_postgresql_database.psqldb_notejam.name}?ssl=true"
     DB_NAME                        = azurerm_postgresql_database.psqldb_notejam.name
   }
 
