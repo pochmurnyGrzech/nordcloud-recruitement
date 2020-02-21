@@ -27,7 +27,7 @@
     "should-http": "*",
     "async": "*",
     "moment": "*",
-    "bcrypt": "*",
+    "bcrypt": "^3.0.0",
     "nodemailer": "*",
     "nodemailer-stub-transport": "*",
     "pg": "6.1.0"
