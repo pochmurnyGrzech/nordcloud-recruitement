@@ -1,7 +1,7 @@
 var settings = {
   development: {
-    db: process.env.DB_NAME,
-    dsn: process.env.CONNECTION_STRING,
+    db: "psqldb0notejam0lab0we",
+    dsn: "postgres://psqladminum@psql0notejam0lab0we:zaq1@WSX@psql0notejam0lab0we.postgres.database.azure.com/psqldb0notejam0lab0we?ssl=true",
   },
   test: {
     db: "notejam_test.db",

@@ -8,7 +8,7 @@
   "dependencies": {
     "@types/sqlite3": "^3.1.6",
     "async": "*",
-    "bcrypt": "^4.0.0",
+    "bcrypt": "*",
     "body-parser": "~1.0.0",
     "connect-flash": "~0.1.1",
     "cookie-parser": "~1.0.1",
@@ -21,8 +21,8 @@
     "moment": "*",
     "morgan": "~1.0.0",
     "nodemailer": "*",
-    "nodemailer-stub-transport": "*",
-    "orm": "^2.1.30",
+    "nodemailer-stub-transport": "^1.1.0",
+    "orm": "~2.1.19",
     "passport": "0.2.1",
     "passport-local": "1.0.0",
     "pg": "6.1.0",
@@ -30,7 +30,7 @@
     "should-http": "*",
     "sqlite3": "*",
     "static-favicon": "~1.0.0",
-    "superagent": "^5.2.2",
+    "superagent": "*",
     "supertest": "0.*.*"
   }
 }
