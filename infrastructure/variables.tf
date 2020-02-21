@@ -38,3 +38,11 @@ variable "app_service_plan_per_site_scaling" {
 variable "app_service_always_on" {
   
 }
+
+variable "db_password" {
+  
+}
+
+variable "db_login" {
+  
+}

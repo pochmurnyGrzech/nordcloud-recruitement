@@ -20,6 +20,64 @@ locals {
   name_postfix = "${var.project_name}0${terraform.workspace}0${var.location_shortcut}"
 }
 
+data "azurerm_client_config" "current" {
+}
+
+resource "azurerm_key_vault" "kv_notejam" {
+  name                = "kv0${local.name_postfix}"
+  location            = azurerm_resource_group.rg_notejam.location
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  sku_name            = "standard"
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    key_permissions = [
+      "get", "create",
+    ]
+
+    secret_permissions = [
+      "get", "set", "list"
+    ]
+  }
+
+  tags = merge(
+    local.common_tags
+  )
+}
+
+resource "azurerm_key_vault_secret" "kvs_notejam_db_password" {
+  name         = "DbPassword"
+  value        = var.db_password
+  key_vault_id = azurerm_key_vault.kv_notejam.id
+
+  tags = merge(
+    local.common_tags
+  )
+}
+
+resource "azurerm_key_vault_secret" "kvs_notejam_db_login" {
+  name         = "DbLogin"
+  value        = var.db_login
+  key_vault_id = azurerm_key_vault.kv_notejam.id
+
+  tags = merge(
+    local.common_tags
+  )
+}
+
+data "azurerm_key_vault_secret" "kvs_notejam_db_password" {
+  name         = azurerm_key_vault_secret.kvs_notejam_db_password.name
+  key_vault_id = azurerm_key_vault.kv_notejam.id
+}
+
+data "azurerm_key_vault_secret" "kvs_notejam_db_login" {
+  name         = azurerm_key_vault_secret.kvs_notejam_db_login.name
+  key_vault_id = azurerm_key_vault.kv_notejam.id
+}
+
 resource "azurerm_resource_group" "rg_notejam" {
   name     = "rg0${local.name_postfix}"
   location = var.location
@@ -35,7 +93,7 @@ resource "azurerm_application_insights" "appinsights_notejam" {
   resource_group_name = azurerm_resource_group.rg_notejam.name
   application_type    = "Node.JS"
 
-    tags = merge(
+  tags = merge(
     local.common_tags
   )
 }
@@ -74,8 +132,10 @@ resource "azurerm_app_service" "app_notejam" {
 
   app_settings = {
     APPINSIGHTS_INSTRUMENTATIONKEY = azurerm_application_insights.appinsights_notejam.instrumentation_key
-    WEBSITE_NODE_DEFAULT_VERSION = "10.18.0"
-    PORT = "8080"
+    WEBSITE_NODE_DEFAULT_VERSION   = "10.18.0"
+    PORT                           = "8080"
+    CONNECTION_STRING              = "postgres://${data.azurerm_key_vault_secret.kvs_notejam_db_login.value}@${azurerm_postgresql_database.psqldb_notejam.name}:${data.azurerm_key_vault_secret.kvs_notejam_db_password.value}@${azurerm_postgresql_server.psql_notejam.fqdn}/${azurerm_postgresql_database.psqldb_notejam.name}?ssl=true"
+    DB_NAME                        = azurerm_postgresql_database.psqldb_notejam.name
   }
 
   tags = merge(
@@ -83,19 +143,100 @@ resource "azurerm_app_service" "app_notejam" {
   )
 }
 
-# resource "azurerm_app_service_slot" "app_notejam_staging" {
-#   name                = "app0staging${local.name_postfix}"
-#   app_service_name    = azurerm_app_service.app_notejam.name
-#   location            = azurerm_resource_group.rg_notejam.location
+resource "azurerm_postgresql_server" "psql_notejam" {
+  name                = "psql0${local.name_postfix}"
+  location            = azurerm_resource_group.rg_notejam.location
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+
+  sku_name = "GP_Gen5_2"
+
+  storage_profile {
+    storage_mb            = 5120
+    backup_retention_days = 7
+    geo_redundant_backup  = "Disabled"
+    auto_grow             = "Enabled"
+  }
+
+  administrator_login          = data.azurerm_key_vault_secret.kvs_notejam_db_login.value
+  administrator_login_password = data.azurerm_key_vault_secret.kvs_notejam_db_password.value
+  version                      = "11"
+  ssl_enforcement              = "Enabled"
+
+  tags = merge(
+    local.common_tags
+  )
+}
+
+resource "azurerm_postgresql_database" "psqldb_notejam" {
+  name                = "psqldb0${local.name_postfix}"
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  server_name         = azurerm_postgresql_server.psql_notejam.name
+
+  charset   = "UTF8"
+  collation = "English_United States.1252"
+}
+
+# Replica is not suppoerted in terraform right now
+# resource "azurerm_postgresql_database" "psqldb_notejam_replica" {
+#   name                = "psqldb0replica0${local.name_postfix}"
 #   resource_group_name = azurerm_resource_group.rg_notejam.name
-#   app_service_plan_id = azurerm_app_service_plan.plan_notejam.id
-
-#   site_config {
-#     linux_fx_version = "NODE|10.18"
-#   }
-
-#   app_settings = {
-#     WEBSITE_NODE_DEFAULT_VERSION = "10.18.0"
-#     InstrumentationKey = azurerm_application_insights.appinsights_notejam.instrumentation_key
-#   }
+#   server_name         = azurerm_postgresql_server.psql_notejam.name
+#
+#   charset   = "UTF8"
+#   collation = "English_United States.1252"
 # }
+
+
+resource "azurerm_network_security_group" "nsg_notejam" {
+  name                = "nsg0${local.name_postfix}"
+  location            = azurerm_resource_group.rg_notejam.location
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+}
+
+resource "azurerm_virtual_network" "vnet_notejam" {
+  name                = "vnet0${local.name_postfix}"
+  location            = azurerm_resource_group.rg_notejam.location
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  address_space       = ["10.0.0.0/24"]
+
+  tags = merge(
+    local.common_tags
+  )
+}
+
+resource "azurerm_subnet" "snet_app_notejam" {
+  name                 = "snet0app0${local.name_postfix}"
+  resource_group_name  = azurerm_resource_group.rg_notejam.name
+  virtual_network_name = azurerm_virtual_network.vnet_notejam.name
+  address_prefix       = "10.0.0.0/25"
+
+  delegation {
+    name = "acctestdelegation"
+
+    service_delegation {
+      name    = "Microsoft.Web/serverFarms"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+    }
+  }
+}
+
+resource "azurerm_subnet" "snet_db_notejam" {
+  name                 = "snet0db${local.name_postfix}"
+  resource_group_name  = azurerm_resource_group.rg_notejam.name
+  virtual_network_name = azurerm_virtual_network.vnet_notejam.name
+  address_prefix       = "10.0.0.128/25"
+
+  service_endpoints = ["Microsoft.Sql"]
+}
+
+resource "azurerm_app_service_virtual_network_swift_connection" "vnet_app_connection_notejam" {
+  app_service_id = azurerm_app_service.app_notejam.id
+  subnet_id      = azurerm_subnet.snet_app_notejam.id
+}
+
+resource "azurerm_postgresql_virtual_network_rule" "vnetrule_db_notejam" {
+  name                = "vnetrule0db0${local.name_postfix}"
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  server_name         = azurerm_postgresql_server.psql_notejam.name
+  subnet_id           = azurerm_subnet.snet_db_notejam.id
+}
