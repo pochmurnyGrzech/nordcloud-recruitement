@@ -196,6 +196,47 @@ resource "azurerm_postgresql_database" "psqldb_notejam" {
 # }
 
 #############
+# Should be in separated module because firstly app service need to be deployed
+#############
+resource "azurerm_postgresql_firewall_rule" "psql_app_firewall_rules_notejam" {
+  count               = length(split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses))
+  name                = "App_Notejam_${count.index}"
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  server_name         = azurerm_postgresql_server.psql_notejam.name
+  start_ip_address    = split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses)[count.index]
+  end_ip_address      = split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses)[count.index]
+}
+
+resource "azurerm_postgresql_firewall_rule" "psql_az_firewall_rule_notejam" {
+  name                = "Azure"
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  server_name         = azurerm_postgresql_server.psql_notejam.name
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
+
+data "template_file" "dashboard_notejam_template" {
+  template = "${file("${path.module}/dashboard.tpl")}"
+  vars = {
+    app_insights_id  = azurerm_application_insights.appinsights_notejam.id
+    app_service_id   = azurerm_app_service.app_notejam.id
+    app_service_name = azurerm_app_service.app_notejam.name
+    db_server_name   = azurerm_postgresql_server.psql_notejam.name
+    db_server_id     = azurerm_postgresql_server.psql_notejam.id
+  }
+}
+
+resource "azurerm_dashboard" "dashboard_notejam" {
+  name                = "NoteJamDashboard"
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  location            = azurerm_resource_group.rg_notejam.location
+  tags = merge(
+    local.common_tags
+  )
+  dashboard_properties = data.template_file.dashboard_notejam_template.rendered
+}
+
+#############
 # Next step - virtual network for app service and database.
 #############
 # resource "azurerm_network_security_group" "nsg_notejam" {
@@ -251,44 +292,3 @@ resource "azurerm_postgresql_database" "psqldb_notejam" {
 #   server_name         = azurerm_postgresql_server.psql_notejam.name
 #   subnet_id           = azurerm_subnet.snet_db_notejam.id
 # }
-
-#############
-# Should be in separated module because firstly app service need to be deployed
-#############
-resource "azurerm_postgresql_firewall_rule" "psql_app_firewall_rules_notejam" {
-  count               = length(split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses))
-  name                = "App_Notejam_${count.index}"
-  resource_group_name = azurerm_resource_group.rg_notejam.name
-  server_name         = azurerm_postgresql_server.psql_notejam.name
-  start_ip_address    = split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses)[count.index]
-  end_ip_address      = split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses)[count.index]
-}
-
-resource "azurerm_postgresql_firewall_rule" "psql_az_firewall_rule_notejam" {
-  name                = "Azure"
-  resource_group_name = azurerm_resource_group.rg_notejam.name
-  server_name         = azurerm_postgresql_server.psql_notejam.name
-  start_ip_address    = "0.0.0.0"
-  end_ip_address      = "0.0.0.0"
-}
-
-data "template_file" "dashboard_notejam_template" {
-  template = "${file("${path.module}/dashboard.tpl")}"
-  vars = {
-    app_insights_id  = azurerm_application_insights.appinsights_notejam.id
-    app_service_id   = azurerm_app_service.app_notejam.id
-    app_service_name = azurerm_app_service.app_notejam.name
-    db_server_name   = azurerm_postgresql_server.psql_notejam.name
-    db_server_id     = azurerm_postgresql_server.psql_notejam.id
-  }
-}
-
-resource "azurerm_dashboard" "dashboard_notejam" {
-  name                = "NoteJamDashboard"
-  resource_group_name = azurerm_resource_group.rg_notejam.name
-  location            = azurerm_resource_group.rg_notejam.location
-  tags = merge(
-    local.common_tags
-  )
-  dashboard_properties = data.template_file.dashboard_notejam_template.rendered
-}
