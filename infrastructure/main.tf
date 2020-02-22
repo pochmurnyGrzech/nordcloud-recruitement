@@ -23,6 +23,15 @@ locals {
 data "azurerm_client_config" "current" {
 }
 
+resource "azurerm_resource_group" "rg_notejam" {
+  name     = "rg0${local.name_postfix}"
+  location = var.location
+
+  tags = merge(
+    local.common_tags
+  )
+}
+
 resource "azurerm_key_vault" "kv_notejam" {
   name                = "kv0${local.name_postfix}"
   location            = azurerm_resource_group.rg_notejam.location
@@ -48,6 +57,9 @@ resource "azurerm_key_vault" "kv_notejam" {
   )
 }
 
+#############
+# Should be in separeted module
+#############
 resource "azurerm_key_vault_secret" "kvs_notejam_db_password" {
   name         = "DbPassword"
   value        = var.db_password
@@ -58,6 +70,9 @@ resource "azurerm_key_vault_secret" "kvs_notejam_db_password" {
   )
 }
 
+#############
+# Should be in separeted module
+#############
 resource "azurerm_key_vault_secret" "kvs_notejam_db_login" {
   name         = "DbLogin"
   value        = var.db_login
@@ -69,23 +84,15 @@ resource "azurerm_key_vault_secret" "kvs_notejam_db_login" {
 }
 
 data "azurerm_key_vault_secret" "kvs_notejam_db_password" {
-  name         = azurerm_key_vault_secret.kvs_notejam_db_password.name
+  name         = azurerm_key_vault_secret.kvs_notejam_db_password.name # Should be from separeted module output
   key_vault_id = azurerm_key_vault.kv_notejam.id
 }
 
 data "azurerm_key_vault_secret" "kvs_notejam_db_login" {
-  name         = azurerm_key_vault_secret.kvs_notejam_db_login.name
+  name = azurerm_key_vault_secret.kvs_notejam_db_login.name # Should be from separeted module output
   key_vault_id = azurerm_key_vault.kv_notejam.id
 }
 
-resource "azurerm_resource_group" "rg_notejam" {
-  name     = "rg0${local.name_postfix}"
-  location = var.location
-
-  tags = merge(
-    local.common_tags
-  )
-}
 
 resource "azurerm_application_insights" "appinsights_notejam" {
   name                = "appinsights0${local.name_postfix}"
@@ -176,7 +183,9 @@ resource "azurerm_postgresql_database" "psqldb_notejam" {
   collation = "English_United States.1252"
 }
 
-# Replica is not suppoerted in terraform right now
+#############
+# Replica is not suppoerted in terraform right now - could be done with ARM template or in portal.
+#############
 # resource "azurerm_postgresql_database" "psqldb_notejam_replica" {
 #   name                = "psqldb0replica0${local.name_postfix}"
 #   resource_group_name = azurerm_resource_group.rg_notejam.name
@@ -186,7 +195,9 @@ resource "azurerm_postgresql_database" "psqldb_notejam" {
 #   collation = "English_United States.1252"
 # }
 
-
+#############
+# Next step - virtual network for app service and database.
+#############
 # resource "azurerm_network_security_group" "nsg_notejam" {
 #   name                = "nsg0${local.name_postfix}"
 #   location            = azurerm_resource_group.rg_notejam.location
@@ -241,6 +252,9 @@ resource "azurerm_postgresql_database" "psqldb_notejam" {
 #   subnet_id           = azurerm_subnet.snet_db_notejam.id
 # }
 
+#############
+# Should be in separated module because firstly app service need to be deployed
+#############
 resource "azurerm_postgresql_firewall_rule" "psql_app_firewall_rules_notejam" {
   count               = length(split(",", azurerm_app_service.app_notejam.possible_outbound_ip_addresses))
   name                = "App_Notejam_${count.index}"
@@ -256,4 +270,25 @@ resource "azurerm_postgresql_firewall_rule" "psql_az_firewall_rule_notejam" {
   server_name         = azurerm_postgresql_server.psql_notejam.name
   start_ip_address    = "0.0.0.0"
   end_ip_address      = "0.0.0.0"
+}
+
+data "template_file" "dashboard_notejam_template" {
+  template = "${file("${path.module}/dashboard.tpl")}"
+  vars = {
+    app_insights_id  = azurerm_application_insights.appinsights_notejam.id
+    app_service_id   = azurerm_app_service.app_notejam.id
+    app_service_name = azurerm_app_service.app_notejam.name
+    db_server_name   = azurerm_postgresql_server.psql_notejam.name
+    db_server_id     = azurerm_postgresql_server.psql_notejam.id
+  }
+}
+
+resource "azurerm_dashboard" "dashboard_notejam" {
+  name                = "NoteJamDashboard"
+  resource_group_name = azurerm_resource_group.rg_notejam.name
+  location            = azurerm_resource_group.rg_notejam.location
+  tags = merge(
+    local.common_tags
+  )
+  dashboard_properties = data.template_file.dashboard_notejam_template.rendered
 }

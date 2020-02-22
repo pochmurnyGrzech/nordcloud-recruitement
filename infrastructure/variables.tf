@@ -39,10 +39,16 @@ variable "app_service_always_on" {
   
 }
 
+#############
+# Should be in separeted module
+#############
 variable "db_password" {
   
 }
 
+#############
+# Should be in separeted module
+#############
 variable "db_login" {
   
 }
