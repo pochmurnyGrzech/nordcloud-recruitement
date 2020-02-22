@@ -19,6 +19,13 @@ Migration from SQLite to PostgreSQL is described [here](./db.md)
 Furthermore, there is a prepared dashboard to watch metrics from the client applications.
 ![dashboard](./images/dashboard.png)
 
+Cost estimation are in file: `costs.xlsx`.
+
+SLA:
+- App Service:  99.95%
+- Azure PostgreSQL: 99.99%
+- Key Vault: 99.9%
+
 ### Step 2: Prepare failover
 
 - Azure Traffic Manager to distribute load across regions.
