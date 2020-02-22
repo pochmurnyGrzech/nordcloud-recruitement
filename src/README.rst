@@ -81,3 +81,9 @@ Always prepend your commits with a framework name:
 .. code-block:: bash
 
     Express: Implemented sign in functionality
+
+
+# To work with PostgreSQL define environment variables:
+
+- `DB_NAME` - name of database
+- `CONNECTION_STRING` - connection string in format: `"postgres://{login}@{server_name}:{password}@{server_url}/{database_name}?ssl={true|false}`
